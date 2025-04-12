@@ -80,16 +80,37 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 HWND slider = (HWND)lParam;
                 int pos = SendMessage(slider, TBM_GETPOS, 0, 0);
                 float value = pos / 100.0f;
+                int sliderId = GetDlgCtrlID(slider);
 
-                switch (GetDlgCtrlID(slider)) {
+                switch (sliderId) {
                     case ID_GRAVITY_SLIDER:
                         cloth->SetGravity(value);
+                        UpdateSliderText(hwnd, sliderId, ID_GRAVITY_TEXT);
                         break;
                     case ID_STIFFNESS_SLIDER:
                         cloth->SetStiffness(value);
+                        UpdateSliderText(hwnd, sliderId, ID_STIFFNESS_TEXT);
                         break;
                     case ID_DAMPING_SLIDER:
                         cloth->SetDamping(value);
+                        UpdateSliderText(hwnd, sliderId, ID_DAMPING_TEXT);
+                        break;
+                }
+            }
+            return 0;
+
+        case WM_CHAR:
+            if (cloth) {
+                switch (tolower(wParam)) {
+                    case 'r':
+                        cloth->Reset();
+                        break;
+                    case 'w':
+                        {
+                            bool isChecked = IsDlgButtonChecked(hwnd, ID_WIRE_TOGGLE) == BST_CHECKED;
+                            CheckDlgButton(hwnd, ID_WIRE_TOGGLE, isChecked ? BST_UNCHECKED : BST_CHECKED);
+                            cloth->SetWireVisibility(!isChecked);
+                        }
                         break;
                 }
             }

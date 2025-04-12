@@ -11,7 +11,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define ID_STIFFNESS_SLIDER 102
 #define ID_DAMPING_SLIDER 103
 #define ID_RESET_BUTTON 104
-#define ID_WIRE_TOGGLE 105  // Add new control ID
+#define ID_WIRE_TOGGLE 105
+#define ID_GRAVITY_TEXT 106
+#define ID_STIFFNESS_TEXT 107
+#define ID_DAMPING_TEXT 108
 
 // Trackbar constants if not defined
 #ifndef TBM_SETRANGE
@@ -29,3 +32,4 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 // GUI helper functions
 void CreateSimControls(HWND hwnd);
 void UpdateSimParameters(HWND hwnd, int controlId);
+void UpdateSliderText(HWND hwnd, int sliderId, int textId);
