@@ -12,9 +12,13 @@ add_executable(ClothSimulation
     main.cpp
     Cloth.cpp
     Cloth.h
+    GuiControls.cpp
 )
 
 target_link_libraries(ClothSimulation
     gdi32
     user32
-) 
+    comctl32
+)
+
+add_definitions(-D_WIN32_IE=0x0500)

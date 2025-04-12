@@ -39,6 +39,9 @@ private:
     float spacing;
     int draggedPoint;   // Index of the point being dragged
     float mouseX, mouseY; // Current mouse position
+    float gravityForce;
+    float springStiffness;
+    float springDamping;
 
     void InitializeSprings();
     void InitializeFaces();
@@ -68,4 +71,8 @@ public:
     void HandleMouseMove(int x, int y);
     void HandleMouseUp();
     void SetMaxStretch(float ratio);  // New: set max stretch ratio
+    void SetGravity(float g);
+    void SetStiffness(float s);
+    void SetDamping(float d);
+    void Reset();
 };

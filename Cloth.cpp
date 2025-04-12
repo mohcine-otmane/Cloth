@@ -2,7 +2,7 @@
 #include <cmath>
 
 Cloth::Cloth(int width, int height, float spacing)
-    : width(width), height(height), spacing(spacing), draggedPoint(-1) {
+    : width(width), height(height), spacing(spacing), draggedPoint(-1), gravityForce(500.0f), springStiffness(8000.0f), springDamping(2.0f) {
     // Initialize point masses
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -38,8 +38,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + 1;
                 s.restLength = spacing;
-                s.stiffness = 8000.0f;  // Increased from 2000
-                s.damping = 2.0f;       // Increased from 0.5
+                s.stiffness = springStiffness;
+                s.damping = springDamping;
                 springs.push_back(s);
             }
 
@@ -49,8 +49,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + width;
                 s.restLength = spacing;
-                s.stiffness = 8000.0f;  // Increased from 2000
-                s.damping = 2.0f;       // Increased from 0.5
+                s.stiffness = springStiffness;
+                s.damping = springDamping;
                 springs.push_back(s);
             }
 
@@ -60,8 +60,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + width + 1;
                 s.restLength = spacing * std::sqrt(2.0f);
-                s.stiffness = 4000.0f;  // Increased from 1000
-                s.damping = 1.5f;       // Increased damping
+                s.stiffness = springStiffness / 2.0f;
+                s.damping = springDamping * 0.75f;
                 springs.push_back(s);
 
                 s.point1 = current + 1;
@@ -129,10 +129,9 @@ void Cloth::Update(float dt) {
 }
 
 void Cloth::ApplyGravity() {
-    const float gravity = 500.0f; // Reduced gravity
     for (auto& point : points) {
         if (!point.isFixed && !point.isDragged) {
-            point.fy += gravity * point.mass;
+            point.fy += gravityForce * point.mass;
         }
     }
 }
@@ -466,5 +465,43 @@ void Cloth::HandleMouseUp() {
     if (draggedPoint != -1) {
         points[draggedPoint].isDragged = false;
         draggedPoint = -1;
+    }
+}
+
+void Cloth::SetGravity(float g) {
+    gravityForce = g * 1000.0f; // Scale for better slider control
+}
+
+void Cloth::SetStiffness(float s) {
+    springStiffness = s * 10000.0f; // Scale for better slider control
+    for (auto& spring : springs) {
+        spring.stiffness = springStiffness;
+    }
+}
+
+void Cloth::SetDamping(float d) {
+    springDamping = d * 2.0f; // Scale for better slider control
+    for (auto& spring : springs) {
+        spring.damping = springDamping;
+    }
+}
+
+void Cloth::Reset() {
+    // Reset points to initial positions
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int i = y * width + x;
+            points[i].x = x * spacing + 100.0f;
+            points[i].y = y * spacing + 100.0f;
+            points[i].vx = 0;
+            points[i].vy = 0;
+            points[i].fx = 0;
+            points[i].fy = 0;
+        }
+    }
+    // Reset springs
+    for (auto& spring : springs) {
+        spring.broken = false;
+        spring.stressFrames = 0;
     }
 }

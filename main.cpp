@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <math.h>
 #include "Cloth.h"
+#include "GuiControls.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -10,6 +11,13 @@ bool isRunning = true;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
+        case WM_CREATE:
+            CreateSimControls(hwnd);
+            SendMessage(GetDlgItem(hwnd, ID_GRAVITY_SLIDER), TBM_SETPOS, TRUE, 50);
+            SendMessage(GetDlgItem(hwnd, ID_STIFFNESS_SLIDER), TBM_SETPOS, TRUE, 50);
+            SendMessage(GetDlgItem(hwnd, ID_DAMPING_SLIDER), TBM_SETPOS, TRUE, 50);
+            return 0;
+
         case WM_DESTROY:
             isRunning = false;
             PostQuitMessage(0);
@@ -66,6 +74,32 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             EndPaint(hwnd, &ps);
             return 0;
         }
+
+        case WM_HSCROLL:
+            if (cloth) {
+                HWND slider = (HWND)lParam;
+                int pos = SendMessage(slider, TBM_GETPOS, 0, 0);
+                float value = pos / 100.0f;
+
+                switch (GetDlgCtrlID(slider)) {
+                    case ID_GRAVITY_SLIDER:
+                        cloth->SetGravity(value);
+                        break;
+                    case ID_STIFFNESS_SLIDER:
+                        cloth->SetStiffness(value);
+                        break;
+                    case ID_DAMPING_SLIDER:
+                        cloth->SetDamping(value);
+                        break;
+                }
+            }
+            return 0;
+
+        case WM_COMMAND:
+            if (LOWORD(wParam) == ID_RESET_BUTTON && cloth) {
+                cloth->Reset();
+            }
+            return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -85,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     RegisterClassA(&wc);
     
     // Calculate window size including borders
-    RECT windowRect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
+    RECT windowRect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT + 170 }; // Add 170 pixels for controls
     AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
     
     // Create the window
@@ -169,4 +203,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     delete cloth;
     return 0;
-} 
+}
