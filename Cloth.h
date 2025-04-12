@@ -26,27 +26,35 @@ struct Spring {
     }
 };
 
+struct Face {
+    int p1, p2, p3;  // Indices of three points forming a triangle
+};
+
 class Cloth {
 private:
     std::vector<PointMass> points;
     std::vector<Spring> springs;
+    std::vector<Face> faces;
     int width, height;
     float spacing;
     int draggedPoint;   // Index of the point being dragged
     float mouseX, mouseY; // Current mouse position
 
     void InitializeSprings();
+    void InitializeFaces();
     void ApplySpringForces();
     void ApplyGravity();
     void UpdatePositions(float dt);
     void HandleCollisions();
     void DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const PointMass& p2);
+    void DrawFace(HDC hdc, const Face& face);
     void HandleSelfCollisions();  // New: self-collision detection
     float GetNonlinearForce(float stretch) const;  // New: non-linear spring force
     void CheckSpringBreaking();  // New: check for spring breaks
     bool CheckPointProximity(const PointMass& p1, const PointMass& p2) const;
     void ResetSpringStress(Spring& spring);
     void UpdateSpringStress(Spring& spring, float stretch);
+    COLORREF GetFaceColor(const Face& face) const;
 
 public:
     Cloth(int width, int height, float spacing);

@@ -21,6 +21,7 @@ Cloth::Cloth(int width, int height, float spacing)
     }
 
     InitializeSprings();
+    InitializeFaces();
 }
 
 Cloth::~Cloth() {}
@@ -75,6 +76,23 @@ void Cloth::InitializeSprings() {
         spring.stressFrames = 0;
         // Higher break threshold for structural springs
         spring.maxStretch = spring.getBreakThreshold();
+    }
+}
+
+void Cloth::InitializeFaces() {
+    for (int y = 0; y < height - 1; y++) {
+        for (int x = 0; x < width - 1; x++) {
+            int topLeft = y * width + x;
+            int topRight = topLeft + 1;
+            int bottomLeft = (y + 1) * width + x;
+            int bottomRight = bottomLeft + 1;
+
+            // Add two triangles for each grid cell
+            Face f1 = {topLeft, bottomLeft, topRight};
+            Face f2 = {bottomLeft, bottomRight, topRight};
+            faces.push_back(f1);
+            faces.push_back(f2);
+        }
     }
 }
 
@@ -296,6 +314,51 @@ void Cloth::UpdatePositions(float dt) {
     }
 }
 
+COLORREF Cloth::GetFaceColor(const Face& face) const {
+    // Calculate 2D edge vectors
+    const PointMass& p1 = points[face.p1];
+    const PointMass& p2 = points[face.p2];
+    const PointMass& p3 = points[face.p3];
+    
+    float dx1 = p2.x - p1.x;
+    float dy1 = p2.y - p1.y;
+    float dx2 = p3.x - p1.x;
+    float dy2 = p3.y - p1.y;
+    
+    // Calculate 2D cross product for orientation
+    float crossProduct = dx1 * dy2 - dx2 * dy1;
+    
+    // Calculate area-based shading
+    float area = std::abs(crossProduct) / 2.0f;
+    float baseArea = spacing * spacing / 2.0f;
+    float stretch = area / baseArea;
+    
+    // Map stretch to intensity
+    float intensity = 0.3f + 0.7f * (1.0f / (1.0f + stretch * 0.5f));
+    intensity = std::min(1.0f, std::max(0.3f, intensity));
+    
+    int color = (int)(intensity * 255);
+    return RGB(color, color, color);
+}
+
+void Cloth::DrawFace(HDC hdc, const Face& face) {
+    POINT points[3];
+    points[0].x = (LONG)this->points[face.p1].x;
+    points[0].y = (LONG)this->points[face.p1].y;
+    points[1].x = (LONG)this->points[face.p2].x;
+    points[1].y = (LONG)this->points[face.p2].y;
+    points[2].x = (LONG)this->points[face.p3].x;
+    points[2].y = (LONG)this->points[face.p3].y;
+    
+    HBRUSH hBrush = CreateSolidBrush(GetFaceColor(face));
+    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+    
+    Polygon(hdc, points, 3);
+    
+    SelectObject(hdc, hOldBrush);
+    DeleteObject(hBrush);
+}
+
 void Cloth::DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const PointMass& p2) {
     if (spring.broken) return;
 
@@ -324,7 +387,12 @@ void Cloth::DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const
 }
 
 void Cloth::Draw(HDC hdc) {
-    // Draw springs
+    // Draw faces first
+    for (const auto& face : faces) {
+        DrawFace(hdc, face);
+    }
+    
+    // Draw springs on top with reduced opacity
     for (const auto& spring : springs) {
         const PointMass& p1 = points[spring.point1];
         const PointMass& p2 = points[spring.point2];
