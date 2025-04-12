@@ -37,8 +37,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + 1;
                 s.restLength = spacing;
-                s.stiffness = 2000.0f;  // Increased stiffness
-                s.damping = 0.5f;       // Increased damping
+                s.stiffness = 8000.0f;  // Increased from 2000
+                s.damping = 2.0f;       // Increased from 0.5
                 springs.push_back(s);
             }
 
@@ -48,8 +48,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + width;
                 s.restLength = spacing;
-                s.stiffness = 2000.0f;  // Increased stiffness
-                s.damping = 0.5f;       // Increased damping
+                s.stiffness = 8000.0f;  // Increased from 2000
+                s.damping = 2.0f;       // Increased from 0.5
                 springs.push_back(s);
             }
 
@@ -59,8 +59,8 @@ void Cloth::InitializeSprings() {
                 s.point1 = current;
                 s.point2 = current + width + 1;
                 s.restLength = spacing * std::sqrt(2.0f);
-                s.stiffness = 1000.0f;  // Increased stiffness
-                s.damping = 0.5f;       // Increased damping
+                s.stiffness = 4000.0f;  // Increased from 1000
+                s.damping = 1.5f;       // Increased damping
                 springs.push_back(s);
 
                 s.point1 = current + 1;
@@ -68,6 +68,27 @@ void Cloth::InitializeSprings() {
                 springs.push_back(s);
             }
         }
+    }
+
+    for (auto& spring : springs) {
+        spring.broken = false;
+        spring.stressFrames = 0;
+        // Higher break threshold for structural springs
+        spring.maxStretch = spring.getBreakThreshold();
+    }
+}
+
+void Cloth::ResetSpringStress(Spring& spring) {
+    spring.stressFrames = 0;
+}
+
+void Cloth::UpdateSpringStress(Spring& spring, float stretch) {
+    float stressThreshold = 0.8f * spring.maxStretch;
+
+    if (stretch > stressThreshold) {
+        spring.stressFrames++;
+    } else {
+        spring.stressFrames = std::max(0, spring.stressFrames - 2); // Recover twice as fast
     }
 }
 
@@ -83,6 +104,8 @@ void Cloth::Update(float dt) {
 
     ApplyGravity();
     ApplySpringForces();
+    CheckSpringBreaking();
+    HandleSelfCollisions();
     HandleCollisions();
     UpdatePositions(dt);
 }
@@ -98,21 +121,24 @@ void Cloth::ApplyGravity() {
 
 void Cloth::ApplySpringForces() {
     for (const auto& spring : springs) {
+        if (spring.broken) continue;
+
         PointMass& p1 = points[spring.point1];
         PointMass& p2 = points[spring.point2];
 
         float dx = p2.x - p1.x;
         float dy = p2.y - p1.y;
         float length = std::sqrt(dx * dx + dy * dy);
-        
+
         if (length < 0.0001f) continue;
-        
-        float displacement = length - spring.restLength;
+
+        float stretch = length / spring.restLength;
+        float force = spring.stiffness * GetNonlinearForce(stretch);
+
         float relativeVelocityX = p2.vx - p1.vx;
         float relativeVelocityY = p2.vy - p1.vy;
 
         // Hooke's law with damping
-        float force = spring.stiffness * displacement;
         float dampingForce = spring.damping * (relativeVelocityX * dx + relativeVelocityY * dy) / length;
         float totalForce = force + dampingForce;
 
@@ -128,6 +154,72 @@ void Cloth::ApplySpringForces() {
             p2.fy -= fy;
         }
     }
+}
+
+void Cloth::CheckSpringBreaking() {
+    for (auto& spring : springs) {
+        if (spring.broken) continue;
+
+        const PointMass& p1 = points[spring.point1];
+        const PointMass& p2 = points[spring.point2];
+
+        float dx = p2.x - p1.x;
+        float dy = p2.y - p1.y;
+        float length = std::sqrt(dx * dx + dy * dy);
+        float stretch = length / spring.restLength;
+
+        UpdateSpringStress(spring, stretch);
+
+        if (stretch > spring.maxStretch && spring.stressFrames >= Spring::STRESS_THRESHOLD) {
+            spring.broken = true;
+        }
+    }
+}
+
+float Cloth::GetNonlinearForce(float stretch) const {
+    const float linearRegion = 1.2f;  // Reduced from 1.5
+    if (stretch <= linearRegion) {
+        return (stretch - 1.0f) * 1.5f;  // Increased linear response
+    } else {
+        float excess = stretch - linearRegion;
+        return (linearRegion - 1.0f) * 1.5f + excess * 2.5f;  // Increased non-linear response
+    }
+}
+
+void Cloth::HandleSelfCollisions() {
+    const float minDistance = spacing * 0.5f;
+
+    for (size_t i = 0; i < points.size(); i++) {
+        for (size_t j = i + 1; j < points.size(); j++) {
+            if (CheckPointProximity(points[i], points[j])) {
+                float dx = points[j].x - points[i].x;
+                float dy = points[j].y - points[i].y;
+                float dist = std::sqrt(dx * dx + dy * dy);
+
+                if (dist < minDistance && dist > 0.0001f) {
+                    float moveRatio = (minDistance - dist) / (2.0f * dist);
+                    float moveX = dx * moveRatio;
+                    float moveY = dy * moveRatio;
+
+                    if (!points[i].isFixed && !points[i].isDragged) {
+                        points[i].x -= moveX;
+                        points[i].y -= moveY;
+                    }
+                    if (!points[j].isFixed && !points[j].isDragged) {
+                        points[j].x += moveX;
+                        points[j].y += moveY;
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool Cloth::CheckPointProximity(const PointMass& p1, const PointMass& p2) const {
+    float dx = p2.x - p1.x;
+    float dy = p2.y - p1.y;
+    float distSquared = dx * dx + dy * dy;
+    return distSquared < spacing * spacing;
 }
 
 void Cloth::HandleCollisions() {
@@ -169,7 +261,7 @@ void Cloth::HandleCollisions() {
 }
 
 void Cloth::UpdatePositions(float dt) {
-    const float damping = 0.95f; // Reduced damping
+    const float damping = 0.85f;  // Increased from 0.95 for more rigidity
     for (auto& point : points) {
         if (point.isFixed || point.isDragged) continue;
 
@@ -205,16 +297,21 @@ void Cloth::UpdatePositions(float dt) {
 }
 
 void Cloth::DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const PointMass& p2) {
+    if (spring.broken) return;
+
     // Calculate spring stretch for color
     float dx = p2.x - p1.x;
     float dy = p2.y - p1.y;
     float length = std::sqrt(dx * dx + dy * dy);
     float stretch = length / spring.restLength;
 
-    // Color based on stretch
-    int r = (int)(255 * std::min(1.0f, stretch));
-    int g = (int)(255 * std::max(0.0f, 1.0f - stretch));
-    int b = 0;
+    // Enhanced color gradient
+    float tension = (stretch - 1.0f) / (spring.maxStretch - 1.0f);
+    tension = std::min(1.0f, std::max(0.0f, tension));
+
+    int r = (int)(255 * tension);
+    int g = (int)(255 * (1.0f - tension));
+    int b = (int)(255 * (1.0f - tension * 0.5f));
 
     HPEN hPen = CreatePen(PS_SOLID, 2, RGB(r, g, b));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
@@ -302,4 +399,4 @@ void Cloth::HandleMouseUp() {
         points[draggedPoint].isDragged = false;
         draggedPoint = -1;
     }
-} 
+}
