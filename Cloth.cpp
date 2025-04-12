@@ -2,7 +2,7 @@
 #include <cmath>
 
 Cloth::Cloth(int width, int height, float spacing)
-    : width(width), height(height), spacing(spacing), draggedPoint(-1), gravityForce(500.0f), springStiffness(8000.0f), springDamping(2.0f) {
+    : width(width), height(height), spacing(spacing), draggedPoint(-1), gravityForce(500.0f), springStiffness(8000.0f), springDamping(2.0f), showWires(true) {
     // Initialize point masses
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -391,11 +391,14 @@ void Cloth::Draw(HDC hdc) {
         DrawFace(hdc, face);
     }
     
-    // Draw springs on top with reduced opacity
-    for (const auto& spring : springs) {
-        const PointMass& p1 = points[spring.point1];
-        const PointMass& p2 = points[spring.point2];
-        DrawSpring(hdc, spring, p1, p2);
+    // Draw springs only if enabled
+    if (showWires) {
+        for (const auto& spring : springs) {
+            if (spring.broken) continue;
+            const PointMass& p1 = points[spring.point1];
+            const PointMass& p2 = points[spring.point2];
+            DrawSpring(hdc, spring, p1, p2);
+        }
     }
 
     // Draw points

@@ -11,6 +11,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define ID_STIFFNESS_SLIDER 102
 #define ID_DAMPING_SLIDER 103
 #define ID_RESET_BUTTON 104
+#define ID_WIRE_TOGGLE 105  // Add new control ID
 
 // Trackbar constants if not defined
 #ifndef TBM_SETRANGE

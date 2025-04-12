@@ -44,6 +44,16 @@ void CreateSimControls(HWND hwnd) {
         10, 130, 100, 30,
         hwnd, (HMENU)ID_RESET_BUTTON,
         GetModuleHandle(NULL), NULL);
+
+    // Add wire toggle button
+    CreateWindowEx(0, "BUTTON", "Toggle Wires",
+        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+        120, 130, 100, 30,
+        hwnd, (HMENU)ID_WIRE_TOGGLE,
+        GetModuleHandle(NULL), NULL);
+
+    // Set wire toggle to checked by default
+    CheckDlgButton(hwnd, ID_WIRE_TOGGLE, BST_CHECKED);
 }
 
 void UpdateSimParameters(HWND hwnd, int controlId) {

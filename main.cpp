@@ -99,6 +99,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             if (LOWORD(wParam) == ID_RESET_BUTTON && cloth) {
                 cloth->Reset();
             }
+            else if (LOWORD(wParam) == ID_WIRE_TOGGLE && cloth) {
+                bool checked = (IsDlgButtonChecked(hwnd, ID_WIRE_TOGGLE) == BST_CHECKED);
+                cloth->SetWireVisibility(checked);
+            }
             return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);

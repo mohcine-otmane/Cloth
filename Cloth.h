@@ -42,6 +42,7 @@ private:
     float gravityForce;
     float springStiffness;
     float springDamping;
+    bool showWires;
 
     void InitializeSprings();
     void InitializeFaces();
@@ -75,4 +76,6 @@ public:
     void SetStiffness(float s);
     void SetDamping(float d);
     void Reset();
+    void SetWireVisibility(bool visible) { showWires = visible; }
+    bool GetWireVisibility() const { return showWires; }
 };
