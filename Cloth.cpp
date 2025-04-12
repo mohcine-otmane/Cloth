@@ -391,32 +391,32 @@ void Cloth::Draw(HDC hdc) {
         DrawFace(hdc, face);
     }
     
-    // Draw springs only if enabled
     if (showWires) {
+        // Draw springs
         for (const auto& spring : springs) {
             if (spring.broken) continue;
             const PointMass& p1 = points[spring.point1];
             const PointMass& p2 = points[spring.point2];
             DrawSpring(hdc, spring, p1, p2);
         }
-    }
 
-    // Draw points
-    for (const auto& point : points) {
-        HBRUSH hBrush;
-        if (point.isFixed) {
-            hBrush = CreateSolidBrush(RGB(255, 0, 0)); // Red for fixed points
-        } else if (point.isDragged) {
-            hBrush = CreateSolidBrush(RGB(0, 255, 0)); // Green for dragged points
-        } else {
-            hBrush = CreateSolidBrush(RGB(0, 0, 0)); // Black for normal points
+        // Draw points only when wires are visible
+        for (const auto& point : points) {
+            HBRUSH hBrush;
+            if (point.isFixed) {
+                hBrush = CreateSolidBrush(RGB(255, 0, 0)); // Red for fixed points
+            } else if (point.isDragged) {
+                hBrush = CreateSolidBrush(RGB(0, 255, 0)); // Green for dragged points
+            } else {
+                hBrush = CreateSolidBrush(RGB(0, 0, 0)); // Black for normal points
+            }
+
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+            Ellipse(hdc, (int)point.x - 3, (int)point.y - 3,
+                    (int)point.x + 3, (int)point.y + 3);
+            SelectObject(hdc, hOldBrush);
+            DeleteObject(hBrush);
         }
-
-        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-        Ellipse(hdc, (int)point.x - 3, (int)point.y - 3,
-                (int)point.x + 3, (int)point.y + 3);
-        SelectObject(hdc, hOldBrush);
-        DeleteObject(hBrush);
     }
 }
 
