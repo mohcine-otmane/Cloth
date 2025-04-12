@@ -95,6 +95,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                         cloth->SetDamping(value);
                         UpdateSliderText(hwnd, sliderId, ID_DAMPING_TEXT);
                         break;
+                    case ID_RESOLUTION_SLIDER: {
+                        delete cloth;
+                        cloth = Cloth::CreateWithResolution(pos);
+                        cloth->FixPoint(0, 0);
+                        cloth->FixPoint(pos - 1, 0);
+                        UpdateSliderText(hwnd, sliderId, ID_RESOLUTION_TEXT);
+                        break;
+                    }
                 }
             }
             return 0;

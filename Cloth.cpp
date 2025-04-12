@@ -508,3 +508,46 @@ void Cloth::Reset() {
         spring.stressFrames = 0;
     }
 }
+
+void Cloth::SetResolution(int newWidth, int newHeight) {
+    // Store fixed points state
+    bool wasTopLeftFixed = points[0].isFixed;
+    bool wasTopRightFixed = points[width - 1].isFixed;
+    
+    // Create new cloth with desired resolution
+    width = newWidth;
+    height = newHeight;
+    spacing = 400.0f / newWidth; // Adjust spacing to maintain approximate size
+    
+    points.clear();
+    springs.clear();
+    faces.clear();
+    
+    // Reinitialize with new resolution
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            PointMass pm;
+            pm.x = x * spacing + 100.0f;
+            pm.y = y * spacing + 100.0f;
+            pm.vx = 0;
+            pm.vy = 0;
+            pm.fx = 0;
+            pm.fy = 0;
+            pm.mass = 1.0f;
+            pm.isFixed = false;
+            pm.isDragged = false;
+            points.push_back(pm);
+        }
+    }
+    
+    // Restore fixed points
+    if (wasTopLeftFixed) points[0].isFixed = true;
+    if (wasTopRightFixed) points[width - 1].isFixed = true;
+    
+    InitializeSprings();
+    InitializeFaces();
+}
+
+Cloth* Cloth::CreateWithResolution(int resolution) {
+    return new Cloth(resolution, resolution, 400.0f / resolution);
+}

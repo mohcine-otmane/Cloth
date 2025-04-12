@@ -12,9 +12,11 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define ID_DAMPING_SLIDER 103
 #define ID_RESET_BUTTON 104
 #define ID_WIRE_TOGGLE 105
-#define ID_GRAVITY_TEXT 106
-#define ID_STIFFNESS_TEXT 107
-#define ID_DAMPING_TEXT 108
+#define ID_RESOLUTION_SLIDER 106
+#define ID_RESOLUTION_TEXT 107
+#define ID_GRAVITY_TEXT 108
+#define ID_STIFFNESS_TEXT 109
+#define ID_DAMPING_TEXT 110
 
 // Trackbar constants if not defined
 #ifndef TBM_SETRANGE

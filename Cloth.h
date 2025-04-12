@@ -78,4 +78,6 @@ public:
     void Reset();
     void SetWireVisibility(bool visible) { showWires = visible; }
     bool GetWireVisibility() const { return showWires; }
+    void SetResolution(int newWidth, int newHeight);
+    static Cloth* CreateWithResolution(int resolution);
 };

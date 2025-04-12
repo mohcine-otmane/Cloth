@@ -79,15 +79,32 @@ void CreateSimControls(HWND hwnd) {
         START_X + 120, START_Y + 105, 120, 30,
         hwnd, (HMENU)ID_WIRE_TOGGLE, GetModuleHandle(NULL), NULL);
 
+    // Create resolution controls (Y + 140)
+    CreateWindowEx(0, "STATIC", "Resolution:", WS_CHILD | WS_VISIBLE,
+        START_X, START_Y + 140, LABEL_WIDTH, CONTROL_HEIGHT,
+        hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+    CreateWindowEx(0, TRACKBAR_CLASS, "",
+        WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_NOTICKS,
+        START_X + LABEL_WIDTH, START_Y + 140, SLIDER_WIDTH, CONTROL_HEIGHT,
+        hwnd, (HMENU)ID_RESOLUTION_SLIDER, GetModuleHandle(NULL), NULL);
+
+    CreateWindowEx(0, "STATIC", "20", WS_CHILD | WS_VISIBLE | SS_RIGHT,
+        START_X + LABEL_WIDTH + SLIDER_WIDTH + MARGIN, START_Y + 140,
+        VALUE_WIDTH, CONTROL_HEIGHT,
+        hwnd, (HMENU)ID_RESOLUTION_TEXT, GetModuleHandle(NULL), NULL);
+
     // Initialize sliders
     SendMessage(GetDlgItem(hwnd, ID_GRAVITY_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 100));
     SendMessage(GetDlgItem(hwnd, ID_STIFFNESS_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 100));
     SendMessage(GetDlgItem(hwnd, ID_DAMPING_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 100));
+    SendMessage(GetDlgItem(hwnd, ID_RESOLUTION_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(10, 40));
 
     // Set initial values
     SendMessage(GetDlgItem(hwnd, ID_GRAVITY_SLIDER), TBM_SETPOS, TRUE, 50);
     SendMessage(GetDlgItem(hwnd, ID_STIFFNESS_SLIDER), TBM_SETPOS, TRUE, 50);
     SendMessage(GetDlgItem(hwnd, ID_DAMPING_SLIDER), TBM_SETPOS, TRUE, 50);
+    SendMessage(GetDlgItem(hwnd, ID_RESOLUTION_SLIDER), TBM_SETPOS, TRUE, 20);
     CheckDlgButton(hwnd, ID_WIRE_TOGGLE, BST_CHECKED);
 }
 
