@@ -8,6 +8,11 @@
 #define TBM_GETPOS (WM_USER)
 #endif
 
+// Add presets at the top
+const SimulationPreset HIGH_PRESET = {30, 0.7f, 0.8f, 0.6f, true};
+const SimulationPreset MEDIUM_PRESET = {20, 0.5f, 0.5f, 0.5f, true};
+const SimulationPreset LOW_PRESET = {15, 0.3f, 0.3f, 0.4f, false};
+
 void CreateSimControls(HWND hwnd) {
     // Initialize Common Controls
     INITCOMMONCONTROLSEX icex;
@@ -94,6 +99,34 @@ void CreateSimControls(HWND hwnd) {
         VALUE_WIDTH, CONTROL_HEIGHT,
         hwnd, (HMENU)ID_RESOLUTION_TEXT, GetModuleHandle(NULL), NULL);
 
+    // Add quality controls
+    CreateWindowEx(0, "STATIC", "Quality:", WS_CHILD | WS_VISIBLE,
+        START_X, START_Y + 175, LABEL_WIDTH, CONTROL_HEIGHT,
+        hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+    // Add preset buttons
+    CreateWindowEx(0, "BUTTON", "High",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        START_X + LABEL_WIDTH, START_Y + 175, 60, 25,
+        hwnd, (HMENU)ID_PRESET_HIGH, GetModuleHandle(NULL), NULL);
+
+    CreateWindowEx(0, "BUTTON", "Medium",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        START_X + LABEL_WIDTH + 70, START_Y + 175, 60, 25,
+        hwnd, (HMENU)ID_PRESET_MEDIUM, GetModuleHandle(NULL), NULL);
+
+    CreateWindowEx(0, "BUTTON", "Low",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        START_X + LABEL_WIDTH + 140, START_Y + 175, 60, 25,
+        hwnd, (HMENU)ID_PRESET_LOW, GetModuleHandle(NULL), NULL);
+
+    // Add FPS display
+    CreateWindowEx(0, "STATIC", "FPS: --",
+        WS_CHILD | WS_VISIBLE,
+        START_X + LABEL_WIDTH + SLIDER_WIDTH + MARGIN, START_Y + 175,
+        VALUE_WIDTH + 30, CONTROL_HEIGHT,
+        hwnd, (HMENU)ID_FPS_TEXT, GetModuleHandle(NULL), NULL);
+
     // Initialize sliders
     SendMessage(GetDlgItem(hwnd, ID_GRAVITY_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 100));
     SendMessage(GetDlgItem(hwnd, ID_STIFFNESS_SLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 100));
@@ -117,4 +150,18 @@ void UpdateSliderText(HWND hwnd, int sliderId, int textId) {
 
 void UpdateSimParameters(HWND hwnd, int controlId) {
     // Implementation will be added later when needed
+}
+
+void ApplyPreset(HWND hwnd, const SimulationPreset& preset) {
+    SendMessage(GetDlgItem(hwnd, ID_RESOLUTION_SLIDER), TBM_SETPOS, TRUE, preset.resolution);
+    SendMessage(GetDlgItem(hwnd, ID_GRAVITY_SLIDER), TBM_SETPOS, TRUE, (int)(preset.gravity * 100));
+    SendMessage(GetDlgItem(hwnd, ID_STIFFNESS_SLIDER), TBM_SETPOS, TRUE, (int)(preset.stiffness * 100));
+    SendMessage(GetDlgItem(hwnd, ID_DAMPING_SLIDER), TBM_SETPOS, TRUE, (int)(preset.damping * 100));
+    CheckDlgButton(hwnd, ID_WIRE_TOGGLE, preset.showWires ? BST_CHECKED : BST_UNCHECKED);
+
+    // Update all text displays
+    UpdateSliderText(hwnd, ID_RESOLUTION_SLIDER, ID_RESOLUTION_TEXT);
+    UpdateSliderText(hwnd, ID_GRAVITY_SLIDER, ID_GRAVITY_TEXT);
+    UpdateSliderText(hwnd, ID_STIFFNESS_SLIDER, ID_STIFFNESS_TEXT);
+    UpdateSliderText(hwnd, ID_DAMPING_SLIDER, ID_DAMPING_TEXT);
 }

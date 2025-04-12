@@ -2,6 +2,7 @@
 #include <math.h>
 #include "Cloth.h"
 #include "GuiControls.h"
+#include <cstdio>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -125,16 +126,46 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 0;
 
         case WM_COMMAND:
-            if (LOWORD(wParam) == ID_RESET_BUTTON && cloth) {
-                cloth->Reset();
-            }
-            else if (LOWORD(wParam) == ID_WIRE_TOGGLE && cloth) {
-                bool checked = (IsDlgButtonChecked(hwnd, ID_WIRE_TOGGLE) == BST_CHECKED);
-                cloth->SetWireVisibility(checked);
+            if (cloth) {
+                switch (LOWORD(wParam)) {
+                    case ID_PRESET_HIGH:
+                    case ID_PRESET_MEDIUM:
+                    case ID_PRESET_LOW: {
+                        const SimulationPreset* preset = nullptr;
+                        if (LOWORD(wParam) == ID_PRESET_HIGH) preset = &HIGH_PRESET;
+                        else if (LOWORD(wParam) == ID_PRESET_MEDIUM) preset = &MEDIUM_PRESET;
+                        else preset = &LOW_PRESET;
+
+                        ApplyPreset(hwnd, *preset);
+                        delete cloth;
+                        cloth = Cloth::CreateWithResolution(preset->resolution);
+                        cloth->SetGravity(preset->gravity);
+                        cloth->SetStiffness(preset->stiffness);
+                        cloth->SetDamping(preset->damping);
+                        cloth->SetWireVisibility(preset->showWires);
+                        cloth->FixPoint(0, 0);
+                        cloth->FixPoint(preset->resolution - 1, 0);
+                        break;
+                    }
+                    case ID_RESET_BUTTON:
+                        cloth->Reset();
+                        break;
+                    case ID_WIRE_TOGGLE:
+                        bool checked = (IsDlgButtonChecked(hwnd, ID_WIRE_TOGGLE) == BST_CHECKED);
+                        cloth->SetWireVisibility(checked);
+                        break;
+                }
             }
             return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void UpdateFPS(HWND hwnd, float dt) {
+    float currentFPS = 1.0f / dt;
+    char fpsText[32];
+    sprintf(fpsText, "FPS: %.1f", currentFPS);
+    SetDlgItemText(hwnd, ID_FPS_TEXT, fpsText);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -223,6 +254,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             accumulatedTime -= targetFrameTime;
         }
+        
+        // Update FPS display
+        UpdateFPS(hwnd, dt);
         
         // Redraw only when needed
         if (cloth) {

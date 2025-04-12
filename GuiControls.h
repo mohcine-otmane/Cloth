@@ -17,6 +17,27 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #define ID_GRAVITY_TEXT 108
 #define ID_STIFFNESS_TEXT 109
 #define ID_DAMPING_TEXT 110
+#define ID_QUALITY_SLIDER 111
+#define ID_QUALITY_TEXT 112
+#define ID_FPS_TEXT 113
+#define ID_PRESET_HIGH 114
+#define ID_PRESET_MEDIUM 115
+#define ID_PRESET_LOW 116
+
+// Add optimization preset struct
+struct SimulationPreset {
+    int resolution;
+    float gravity;
+    float stiffness;
+    float damping;
+    bool showWires;
+};
+
+extern const SimulationPreset HIGH_PRESET;
+extern const SimulationPreset MEDIUM_PRESET;
+extern const SimulationPreset LOW_PRESET;
+
+void ApplyPreset(HWND hwnd, const SimulationPreset& preset);
 
 // Trackbar constants if not defined
 #ifndef TBM_SETRANGE
