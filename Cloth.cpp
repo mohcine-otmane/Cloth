@@ -110,22 +110,37 @@ void Cloth::UpdateSpringStress(Spring& spring, float stretch) {
     }
 }
 
-void Cloth::Update(float dt) {
-    // Limit time step for stability
-    dt = std::min(dt, 0.016f); // Cap at 60 FPS
+void Cloth::Update(float dt, float alpha) {
+    if (dt > 0) {
+        // Store previous positions
+        for (auto& point : points) {
+            point.prevX = point.x;
+            point.prevY = point.y;
+        }
 
-    // Reset forces
-    for (auto& point : points) {
-        point.fx = 0;
-        point.fy = 0;
+        // Physics update
+        for (auto& point : points) {
+            point.fx = 0;
+            point.fy = 0;
+        }
+
+        ApplyGravity();
+        ApplySpringForces();
+        CheckSpringBreaking();
+        HandleSelfCollisions();
+        HandleCollisions();
+        UpdatePositions(dt);
     }
 
-    ApplyGravity();
-    ApplySpringForces();
-    CheckSpringBreaking();
-    HandleSelfCollisions();
-    HandleCollisions();
-    UpdatePositions(dt);
+    // Interpolation update
+    UpdateInterpolation(alpha);
+}
+
+void Cloth::UpdateInterpolation(float alpha) {
+    for (auto& point : points) {
+        point.renderX = point.prevX + (point.x - point.prevX) * alpha;
+        point.renderY = point.prevY + (point.y - point.prevY) * alpha;
+    }
 }
 
 void Cloth::ApplyGravity() {
@@ -278,9 +293,14 @@ void Cloth::HandleCollisions() {
 }
 
 void Cloth::UpdatePositions(float dt) {
-    const float damping = 0.85f;  // Increased from 0.95 for more rigidity
     for (auto& point : points) {
         if (point.isFixed || point.isDragged) continue;
+
+        // Store previous position for interpolation
+        point.prevX = point.x;
+        point.prevY = point.y;
+
+        const float damping = 0.85f;  // Increased from 0.95 for more rigidity
 
         // Verlet integration with velocity damping
         float ax = point.fx / point.mass;
@@ -304,12 +324,12 @@ void Cloth::UpdatePositions(float dt) {
         point.y += point.vy * dt;
     }
 
-    // Update dragged point position
+    // Handle dragged point
     if (draggedPoint != -1) {
+        points[draggedPoint].prevX = points[draggedPoint].x;
+        points[draggedPoint].prevY = points[draggedPoint].y;
         points[draggedPoint].x = mouseX;
         points[draggedPoint].y = mouseY;
-        points[draggedPoint].vx = 0;
-        points[draggedPoint].vy = 0;
     }
 }
 
@@ -342,12 +362,12 @@ COLORREF Cloth::GetFaceColor(const Face& face) const {
 
 void Cloth::DrawFace(HDC hdc, const Face& face) {
     POINT points[3];
-    points[0].x = (LONG)this->points[face.p1].x;
-    points[0].y = (LONG)this->points[face.p1].y;
-    points[1].x = (LONG)this->points[face.p2].x;
-    points[1].y = (LONG)this->points[face.p2].y;
-    points[2].x = (LONG)this->points[face.p3].x;
-    points[2].y = (LONG)this->points[face.p3].y;
+    points[0].x = (LONG)this->points[face.p1].renderX;
+    points[0].y = (LONG)this->points[face.p1].renderY;
+    points[1].x = (LONG)this->points[face.p2].renderX;
+    points[1].y = (LONG)this->points[face.p2].renderY;
+    points[2].x = (LONG)this->points[face.p3].renderX;
+    points[2].y = (LONG)this->points[face.p3].renderY;
     
     HBRUSH hBrush = CreateSolidBrush(GetFaceColor(face));
     HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
@@ -362,8 +382,8 @@ void Cloth::DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const
     if (spring.broken) return;
 
     // Calculate spring stretch for color
-    float dx = p2.x - p1.x;
-    float dy = p2.y - p1.y;
+    float dx = p2.renderX - p1.renderX;
+    float dy = p2.renderY - p1.renderY;
     float length = std::sqrt(dx * dx + dy * dy);
     float stretch = length / spring.restLength;
 
@@ -378,8 +398,8 @@ void Cloth::DrawSpring(HDC hdc, const Spring& spring, const PointMass& p1, const
     HPEN hPen = CreatePen(PS_SOLID, 2, RGB(r, g, b));
     HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
-    MoveToEx(hdc, (int)p1.x, (int)p1.y, NULL);
-    LineTo(hdc, (int)p2.x, (int)p2.y);
+    MoveToEx(hdc, (int)p1.renderX, (int)p1.renderY, NULL);
+    LineTo(hdc, (int)p2.renderX, (int)p2.renderY);
 
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
@@ -412,8 +432,8 @@ void Cloth::Draw(HDC hdc) {
             }
 
             HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-            Ellipse(hdc, (int)point.x - 3, (int)point.y - 3,
-                    (int)point.x + 3, (int)point.y + 3);
+            Ellipse(hdc, (int)point.renderX - 3, (int)point.renderY - 3,
+                    (int)point.renderX + 3, (int)point.renderY + 3);
             SelectObject(hdc, hOldBrush);
             DeleteObject(hBrush);
         }

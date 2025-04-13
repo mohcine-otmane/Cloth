@@ -10,6 +10,8 @@ struct PointMass {
     float mass; 
     bool isFixed;       // Whether this point is fixed in place
     bool isDragged;     // Whether this point is being dragged by mouse
+    float prevX, prevY;    // Previous position for interpolation
+    float renderX, renderY; // Interpolated position for rendering
 };
 
 struct Spring {
@@ -43,6 +45,7 @@ private:
     float springStiffness;
     float springDamping;
     bool showWires;
+    float accumulator;     // Time accumulator for interpolation
 
     void InitializeSprings();
     void InitializeFaces();
@@ -59,12 +62,13 @@ private:
     void ResetSpringStress(Spring& spring);
     void UpdateSpringStress(Spring& spring, float stretch);
     COLORREF GetFaceColor(const Face& face) const;
+    void UpdateInterpolation(float alpha);
 
 public:
     Cloth(int width, int height, float spacing);
     ~Cloth();
 
-    void Update(float dt);
+    void Update(float dt, float alpha = 1.0f);
     void Draw(HDC hdc);
     void AddForce(float fx, float fy);
     void FixPoint(int x, int y);

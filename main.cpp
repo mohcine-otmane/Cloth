@@ -225,7 +225,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceCounter(&lastTime);
     
     float accumulatedTime = 0.0f;
-    const float targetFrameTime = 1.0f / 60.0f;
+    const float fixedTimeStep = 1.0f / 60.0f;
     
     while (isRunning) {
         // Handle messages
@@ -241,18 +241,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         accumulatedTime += dt;
         
-        // Update simulation in fixed time steps
-        while (accumulatedTime >= targetFrameTime) {
+        while (accumulatedTime >= fixedTimeStep) {
             if (cloth) {
-                cloth->Update(targetFrameTime);
+                cloth->Update(fixedTimeStep);
                 
                 // Add gentle wind force
                 static float windTime = 0.0f;
-                windTime += targetFrameTime;
+                windTime += fixedTimeStep;
                 float windForce = 5.0f * sinf(windTime * 2.0f);
                 cloth->AddForce(windForce, 0.0f);
             }
-            accumulatedTime -= targetFrameTime;
+            accumulatedTime -= fixedTimeStep;
+        }
+        
+        // Interpolate with remaining time
+        float alpha = accumulatedTime / fixedTimeStep;
+        if (cloth) {
+            cloth->Update(0.0f, alpha); // Update interpolated positions without physics
+            InvalidateRect(hwnd, NULL, FALSE);
         }
         
         // Update FPS display
@@ -260,7 +266,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         // Redraw only when needed
         if (cloth) {
-            InvalidateRect(hwnd, NULL, FALSE);
             UpdateWindow(hwnd); // Force immediate redraw
         }
         

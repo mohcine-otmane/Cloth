@@ -8,7 +8,7 @@ A real-time 2D cloth physics simulation written in C++ using Windows GDI. Featur
 - Spring-mass system with structural and diagonal springs
 - Gravity, wind, and drag forces
 - Interactive mouse control (click and drag cloth points)
-- Double-buffered rendering for smooth animation
+- Double-buffered rendering with position interpolation
 - Quality presets (High/Medium/Low)
 - Adjustable simulation parameters
 - Self-collision detection
